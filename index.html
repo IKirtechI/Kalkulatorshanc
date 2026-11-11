@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Калькулятор шанса апгрейда</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f1115;
+      color: #e6e8ee;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+    .app { width: 100%; max-width: 520px; }
+    h1 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+    .sub { font-size: 13px; color: #8a90a2; margin-bottom: 20px; }
+    .card {
+      background: #181b22;
+      border: 1px solid #262a35;
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      color: #a9afc0;
+      margin-bottom: 6px;
+    }
+    input[type="number"] {
+      width: 100%;
+      background: #0f1115;
+      border: 1px solid #2c3140;
+      border-radius: 9px;
+      padding: 11px 12px;
+      color: #e6e8ee;
+      font-size: 15px;
+      outline: none;
+      transition: border-color .15s;
+    }
+    input[type="number"]:focus { border-color: #4f7cff; }
+    .row { display: flex; gap: 12px; }
+    .row > div { flex: 1; }
+    .field { margin-bottom: 14px; }
+    .hint { font-size: 11px; color: #6b7185; margin-top: 4px; }
+
+    .result-main {
+      text-align: center;
+      padding: 8px 0 4px;
+    }
+    .chance-big {
+      font-size: 42px;
+      font-weight: 700;
+      line-height: 1.1;
+      transition: color .2s;
+    }
+    .chance-label { font-size: 12px; color: #8a90a2; margin-top: 2px; }
+
+    .bar-wrap {
+      height: 14px;
+      background: #0f1115;
+      border-radius: 7px;
+      overflow: hidden;
+      margin: 14px 0 6px;
+      border: 1px solid #262a35;
+    }
+    .bar {
+      height: 100%;
+      width: 0%;
+      border-radius: 7px;
+      transition: width .3s ease, background .2s;
+    }
+    .bar-scale {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #5c6273;
+    }
+
+    .scenarios { margin-top: 16px; }
+    .scenario {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 9px 0;
+      border-bottom: 1px solid #22262f;
+      font-size: 13px;
+    }
+    .scenario:last-child { border-bottom: none; }
+    .scenario .name { color: #a9afc0; }
+    .scenario .val { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+    .divider { height: 1px; background: #262a35; margin: 16px 0; }
+
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .stat {
+      background: #0f1115;
+      border: 1px solid #262a35;
+      border-radius: 10px;
+      padding: 12px;
+    }
+    .stat .k { font-size: 11px; color: #6b7185; margin-bottom: 4px; }
+    .stat .v { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .pos { color: #4ade80; }
+    .neg { color: #f87171; }
+    .warn { color: #fbbf24; }
+
+    .cap-note {
+      font-size: 12px;
+      color: #fbbf24;
+      background: rgba(251,191,36,.08);
+      border: 1px solid rgba(251,191,36,.25);
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin-top: 10px;
+      display: none;
+    }
+
+    .reverse { margin-top: 6px; }
+    .reverse input { max-width: 90px; display: inline-block; width: auto; }
+    .reverse .inline { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #a9afc0; }
+
+    footer { font-size: 11px; color: #5c6273; text-align: center; margin-top: 8px; line-height: 1.5; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <h1>🎲 Калькулятор шанса апгрейда</h1>
+  <div class="sub">Считает вероятность до нажатия. Только математика — без предсказаний.</div>
+
+  <!-- Ввод -->
+  <div class="card">
+    <div class="row">
+      <div class="field">
+        <label>Стоимость твоего предмета</label>
+        <input type="number" id="myValue" placeholder="500" min="0" step="any">
+      </div>
+      <div class="field">
+        <label>Стоимость целевого</label>
+        <input type="number" id="targetValue" placeholder="1200" min="0" step="any">
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:0">
+
+
+      <label>Комиссия сайта, %</label>
+      <input type="number" id="commission" placeholder="10" min="0" max="99" step="any" value="10">
+      <div class="hint">Многие сайты закладывают 5–15%. Если не знаешь — оставь 10.</div>
+    </div>
+  </div>
+
+  <!-- Результат -->
+  <div class="card">
+    <div class="result-main">
+      <div class="chance-big" id="chanceBig">—</div>
+      <div class="chance-label">шанс успеха (с комиссией)</div>
+    </div>
+    <div class="bar-wrap"><div class="bar" id="bar"></div></div>
+    <div class="bar-scale"><span>0%</span><span>50%</span><span>100%</span></div>
+    <div class="cap-note" id="capNote"></div>
+
+    <div class="divider"></div>
+
+    <div class="scenarios">
+      <div class="scenario"><span class="name">Без комиссии</span><span class="val" id="s0">—</span></div>
+      <div class="scenario"><span class="name">Комиссия 5%</span><span class="val" id="s5">—</span></div>
+      <div class="scenario"><span class="name">Комиссия 10%</span><span class="val" id="s10">—</span></div>
+    </div>
+  </div>
+
+  <!-- Матожидание -->
+  <div class="card">
+    <div class="stat-grid">
+      <div class="stat">
+        <div class="k">Матожидание за 1 апгрейд</div>
+        <div class="v" id="ev">—</div>
+      </div>
+      <div class="stat">
+        <div class="k">Окупаемость цели</div>
+        <div class="v" id="payout">—</div>
+      </div>
+    </div>
+    <div class="hint" style="margin-top:10px">
+      Матожидание = шанс × выигрыш − (1 − шанс) × ставка. Отрицательное — ты в среднем теряешь на дистанции.
+    </div>
+  </div>
+
+  <!-- Обратный расчёт -->
+  <div class="card reverse">
+    <label>Обратный расчёт: какая ставка нужна для шанса</label>
+    <div class="inline">
+      <input type="number" id="wantedChance" placeholder="50" min="1" max="99" step="any" value="50">
+      <span>% → ставка ≈</span>
+      <strong id="neededBet" style="color:#4f7cff">—</strong>
+    </div>
+  </div>
+
+  <footer>
+    Формула: (ставка / цель) × (1 − комиссия). Потолок 90% (многие сайты режут сверху).
+
+    Это расчёт вероятности, а не предсказание исхода. Играй ответственно.
+  </footer>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const CAP = 90; // потолок шанса, %
+
+  function fmt(n) {
+    if (!isFinite(n)) return "—";
+    return n.toLocaleString('ru-RU', { maximumFractionDigits: 2 });
+  }
+
+  function chance(my, target, comm) {
+    if (target <= 0 || my <= 0) return null;
+    const raw = (my / target) * (1 - comm / 100);
+    return Math.min(raw * 100, CAP);
+  }
+
+  function colorFor(p) {
+    if (p < 25) return '#f87171';
+    if (p < 50) return '#fbbf24';
+    if (p < 75) return '#a3e635';
+    return '#4ade80';
+  }
+
+  function update() {
+    const my = parseFloat($('myValue').value);
+    const target = parseFloat($('targetValue').value);
+    const comm = parseFloat($('commission').value) || 0;
+
+    const big = $('chanceBig');
+    const bar = $('bar');
+
+    if (!isFinite(my) || !isFinite(target) || target <= 0 || my <= 0) {
+      big.textContent = '—';
+      big.style.color = '#e6e8ee';
+      bar.style.width = '0%';
+      ['s0','s5','s10','ev','payout','neededBet'].forEach(id => $(id).textContent = '—');
+      $('capNote').style.display = 'none';
+      return;
+    }
+
+    const p = chance(my, target, comm);
+    big.textContent = p.toFixed(2) + '%';
+    big.style.color = colorFor(p);
+    bar.style.width = p + '%';
+    bar.style.background = colorFor(p);
+
+    // потолок
+    const rawP = (my / target) * (1 - comm / 100) * 100;
+    if (rawP > CAP) {
+      $('capNote').style.display = 'block';
+      $('capNote').textContent = `⚠ Сырой расчёт ${rawP.toFixed(1)}% обрезан до потолка ${CAP}%. Сайт, скорее всего, не даст больше.`;
+    } else {
+      $('capNote').style.display = 'none';
+    }
+
+    // сценарии
+    $('s0').textContent  = chance(my, target, 0).toFixed(2) + '%';
+    $('s5').textContent  = chance(my, target, 5).toFixed(2) + '%';
+    $('s10').textContent = chance(my, target, 10).toFixed(2) + '%';
+
+    // матожидание: p*(target-my) - (1-p)*my
+    const prob = p / 100;
+    const ev = prob * (target - my) - (1 - prob) * my;
+
+
+    const evEl = $('ev');
+    evEl.textContent = (ev >= 0 ? '+' : '') + fmt(ev);
+    evEl.className = 'v ' + (ev >= 0 ? 'pos' : 'neg');
+
+    // окупаемость: сколько раз цель больше ставки
+    const payout = target / my;
+    $('payout').textContent = '×' + fmt(payout);
+    $('payout').className = 'v ' + (payout >= 2 ? 'warn' : '');
+
+    updateReverse();
+  }
+
+  function updateReverse() {
+    const my = parseFloat($('myValue').value);
+    const target = parseFloat($('targetValue').value);
+    const comm = parseFloat($('commission').value) || 0;
+    const want = parseFloat($('wantedChance').value);
+
+    if (!isFinite(my) || !isFinite(target) || target <= 0 || !isFinite(want) || want <= 0) {
+      $('neededBet').textContent = '—';
+      return;
+    }
+    // want% = (bet/target)*(1-comm)*100  =>  bet = want/100 * target / (1-comm)
+    const bet = (want / 100) * target / (1 - comm / 100);
+    $('neededBet').textContent = fmt(bet);
+  }
+
+  ['myValue','targetValue','commission'].forEach(id => $(id).addEventListener('input', update));
+  $('wantedChance').addEventListener('input', updateReverse);
+  update();
+</script>
+</body>
+</html>
